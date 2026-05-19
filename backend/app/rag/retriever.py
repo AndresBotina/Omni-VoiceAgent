@@ -7,6 +7,7 @@ from pgvector.psycopg2 import register_vector
 def query_knowledge_base(query: str, n_results: int = 3) -> list[str]:
     conn = None
     try:
+        # Embed the query using the same model used during ingestion
         embeddings_model = OpenAIEmbeddings(
             model="text-embedding-3-small",
             api_key=os.getenv("OPENAI_API_KEY"),
@@ -16,6 +17,7 @@ def query_knowledge_base(query: str, n_results: int = 3) -> list[str]:
         conn = psycopg2.connect(os.getenv("DATABASE_URL"))
         register_vector(conn)
         with conn.cursor() as cur:
+            # Ensure schema exists in case retrieval runs before first ingest
             cur.execute("CREATE EXTENSION IF NOT EXISTS vector;")
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS knowledge_base (
@@ -26,6 +28,7 @@ def query_knowledge_base(query: str, n_results: int = 3) -> list[str]:
                 );
             """)
             conn.commit()
+            # Cosine distance (<->) returns the most semantically similar chunks
             cur.execute(
                 """
                 SELECT text FROM knowledge_base

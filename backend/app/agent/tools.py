@@ -5,6 +5,7 @@ from langchain.tools import tool
 from ..rag.retriever import query_knowledge_base
 
 
+# Web search tool via Tavily — used when the knowledge base has no relevant results
 def get_tavily_search_tool() -> TavilySearchResults:
     return TavilySearchResults(
         max_results=3,
@@ -17,6 +18,7 @@ def get_tavily_search_tool() -> TavilySearchResults:
     )
 
 
+# Fetches current weather from OpenWeatherMap for a given city
 @tool
 def get_weather(city: str) -> str:
     """Get the current weather for any city in the world. Use this when the user asks about weather, temperature, climate or atmospheric conditions in a city."""
@@ -35,6 +37,7 @@ def get_weather(city: str) -> str:
     return f"Weather in {city}: {weather}, {temp}°C (feels like {feels_like}°C), humidity {humidity}%"
 
 
+# Converts an amount between currencies using live rates from open.er-api.com (no key required)
 @tool
 def convert_currency(amount: float, from_currency: str, to_currency: str = "USD") -> str:
     """Convert an amount from one currency to another. Use this when the user asks about exchange rates or wants to convert money between currencies."""
@@ -50,6 +53,7 @@ def convert_currency(amount: float, from_currency: str, to_currency: str = "USD"
     return f"{amount} {from_currency.upper()} = {result:.2f} {to_currency.upper()} (rate: {rate})"
 
 
+# Queries the pgvector knowledge base with the user's question using cosine similarity
 @tool
 def search_knowledge_base(query: str) -> str:
     """Search the internal knowledge base built from the RAG source URL. Always try this before web_search."""
@@ -59,5 +63,6 @@ def search_knowledge_base(query: str) -> str:
     return "\n\n".join(results)
 
 
+# Returns all tools in priority order: web search, weather, currency, knowledge base
 def get_tools() -> list:
     return [get_tavily_search_tool(), get_weather, convert_currency, search_knowledge_base]

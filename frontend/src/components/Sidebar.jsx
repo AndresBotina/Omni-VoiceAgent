@@ -1,5 +1,6 @@
 import { useState } from 'react';
 
+// SVG icon components — inline to avoid external dependencies
 const ChatIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
@@ -37,16 +38,20 @@ const MicIcon = () => (
   </svg>
 );
 
+// Navigation items — id maps to activeSection state
 const NAV_ITEMS = [
   { icon: <ChatIcon />, label: 'Chat', id: 'chat' },
   { icon: <KnowledgeIcon />, label: 'Sources', id: 'knowledge' },
 ];
 
 export default function Sidebar({ isOpen, onToggle, mode, onModeChange, onIngest }) {
+  // activeSection: which nav item is highlighted and which panel is shown
+  // kbUrl / kbStatus: ingest panel URL input and last ingest result message
   const [activeSection, setActiveSection] = useState('chat');
   const [kbUrl, setKbUrl] = useState('');
   const [kbStatus, setKbStatus] = useState(null);
 
+  // Calls the parent's onIngest handler and shows success/error status
   const handleIngest = async () => {
     if (!kbUrl.trim()) return;
     setKbStatus('Ingesting…');
@@ -65,7 +70,7 @@ export default function Sidebar({ isOpen, onToggle, mode, onModeChange, onIngest
         left: 0,
         top: 0,
         height: '100vh',
-        width: isOpen ? '220px' : '64px',
+        width: isOpen ? '220px' : '64px',  // collapses to icon-only strip
         transition: 'width 0.3s ease',
         background: 'var(--bg-secondary)',
         borderRight: '1px solid var(--border)',
@@ -75,7 +80,7 @@ export default function Sidebar({ isOpen, onToggle, mode, onModeChange, onIngest
         overflow: 'hidden',
       }}
     >
-      {/* Logo / toggle */}
+      {/* Logo — clicking toggles the sidebar open/closed */}
       <div
         onClick={onToggle}
         style={{
@@ -94,7 +99,7 @@ export default function Sidebar({ isOpen, onToggle, mode, onModeChange, onIngest
         <LogoIcon />
       </div>
 
-      {/* Nav items */}
+      {/* Nav items — clicking Knowledge auto-expands sidebar if collapsed */}
       <nav style={{ paddingTop: '8px' }}>
         {NAV_ITEMS.map((item) => {
           const isActive = activeSection === item.id;
@@ -128,7 +133,7 @@ export default function Sidebar({ isOpen, onToggle, mode, onModeChange, onIngest
         })}
       </nav>
 
-      {/* Knowledge base panel */}
+      {/* Ingest panel — only visible when sidebar is expanded and Sources is active */}
       {isOpen && activeSection === 'knowledge' && (
         <div style={{ padding: '0 8px 12px', display: 'flex', flexDirection: 'column' }}>
           <div style={{ fontSize: '11px', color: 'var(--text-muted)', padding: '8px 8px 4px' }}>
@@ -173,9 +178,9 @@ export default function Sidebar({ isOpen, onToggle, mode, onModeChange, onIngest
         </div>
       )}
 
-      {/* Bottom section */}
+      {/* Bottom section: voice mode toggle, pinned to the bottom of the sidebar */}
       <div style={{ marginTop: 'auto', padding: '12px 8px', borderTop: '1px solid var(--border)' }}>
-        {/* Voice mode toggle */}
+        {/* Voice toggle: switches TTS mode on/off with a sliding pill */}
         <div
           onClick={() => onModeChange(mode === 'text' ? 'voice' : 'text')}
           style={{
@@ -200,6 +205,7 @@ export default function Sidebar({ isOpen, onToggle, mode, onModeChange, onIngest
                 <MicIcon />
                 <span>Voice</span>
               </span>
+              {/* Toggle pill — slides right when voice mode is active */}
               <div style={{
                 width: '36px',
                 height: '20px',

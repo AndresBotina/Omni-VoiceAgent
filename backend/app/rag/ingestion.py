@@ -8,11 +8,13 @@ from pgvector.psycopg2 import register_vector
 
 
 async def ingest_url(url: str) -> int:
+    # Fetch the page HTML
     async with httpx.AsyncClient(timeout=30) as client:
         response = await client.get(url, headers={"User-Agent": "VoiceAgent/1.0"})
         response.raise_for_status()
         html = response.text
 
+    # Extract readable text from paragraph and heading tags
     soup = BeautifulSoup(html, "html.parser")
     parts = [tag.get_text(strip=True) for tag in soup.find_all(["p", "h1", "h2", "h3", "li"])]
     raw_text = "\n".join(parts).strip()
@@ -20,15 +22,18 @@ async def ingest_url(url: str) -> int:
     if not raw_text:
         raise ValueError("No extractable text found at URL")
 
+    # Split into overlapping chunks to preserve context across boundaries
     splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
     chunks = splitter.split_text(raw_text)
 
+    # Embed all chunks in one batch using OpenAI's small embedding model
     embeddings_model = OpenAIEmbeddings(
         model="text-embedding-3-small",
         api_key=os.getenv("OPENAI_API_KEY"),
     )
     vectors = embeddings_model.embed_documents(chunks)
 
+    # First connection: ensure schema exists (DDL committed before inserts)
     conn = psycopg2.connect(os.getenv("DATABASE_URL"))
     register_vector(conn)
     cur = conn.cursor()
@@ -45,6 +50,7 @@ async def ingest_url(url: str) -> int:
     cur.close()
     conn.close()
 
+    # Second connection: upsert each chunk with its embedding and source URL
     conn = psycopg2.connect(os.getenv("DATABASE_URL"))
     register_vector(conn)
     try:

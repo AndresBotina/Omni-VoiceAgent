@@ -24,16 +24,19 @@ class IngestRequest(BaseModel):
     url: str
 
 
+# Liveness check — returns 200 immediately, used by Docker and monitoring
 @router.get("/health")
 async def health():
     return {"status": "ok"}
 
 
+# Main chat endpoint — runs the agent and optionally synthesizes a voice response
 @router.post("/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest):
     try:
         result = await run_agent(request.session_id, request.message)
 
+        # In voice mode, convert the text response to MP3 and base64-encode it
         if request.mode == "voice":
             audio_bytes = await synthesize_speech(result["response"])
             audio_b64 = base64.b64encode(audio_bytes).decode("utf-8")
@@ -49,6 +52,7 @@ async def chat(request: ChatRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# Ingest endpoint — fetches, chunks, embeds, and stores content from a URL
 @router.post("/ingest")
 async def ingest(request: IngestRequest):
     try:

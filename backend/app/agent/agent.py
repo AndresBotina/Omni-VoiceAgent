@@ -7,6 +7,7 @@ from langchain_core.callbacks import BaseCallbackHandler
 from langchain.memory import ConversationBufferWindowMemory
 from .tools import get_tools
 
+# System prompt defining the agent's persona, tool usage rules, and language behavior
 SYSTEM_PROMPT = (
     "You are Omni, an intelligent urban assistant specialized in helping "
     "travelers and foreigners explore and adapt to any city in the world.\n\n"
@@ -39,10 +40,13 @@ SYSTEM_PROMPT = (
     "Match the language of the last user message, always."
 )
 
+# In-memory session store: maps session_id → {executor, memory}
+# OrderedDict enables LRU eviction when the cap is reached
 _sessions: OrderedDict = OrderedDict()
 _MAX_SESSIONS = 100
 
 
+# Callback that captures the name of the first tool invoked during a run
 class ToolCaptureCallback(BaseCallbackHandler):
     def __init__(self):
         self.tool_used: str | None = None
@@ -52,6 +56,7 @@ class ToolCaptureCallback(BaseCallbackHandler):
 
 
 def _build_session(session_id: str) -> dict:
+    # GPT-4o with low temperature for factual, consistent answers
     llm = ChatOpenAI(
         model="gpt-4o",
         temperature=0.3,
@@ -60,6 +65,7 @@ def _build_session(session_id: str) -> dict:
 
     tools = get_tools()
 
+    # Prompt layout: system instructions → chat history → user input → scratchpad
     prompt = ChatPromptTemplate.from_messages([
         ("system", SYSTEM_PROMPT),
         MessagesPlaceholder(variable_name="chat_history"),
@@ -67,6 +73,7 @@ def _build_session(session_id: str) -> dict:
         MessagesPlaceholder(variable_name="agent_scratchpad"),
     ])
 
+    # Sliding window memory: keeps last 10 exchanges to limit token usage
     memory = ConversationBufferWindowMemory(
         k=10,
         return_messages=True,
@@ -88,12 +95,14 @@ def _build_session(session_id: str) -> dict:
 
 
 def _get_or_create_session(session_id: str) -> dict:
+    # Return existing session (bump to end for LRU) or create a new one
     if session_id in _sessions:
         _sessions.move_to_end(session_id)
         return _sessions[session_id]
 
     session = _build_session(session_id)
 
+    # Evict the oldest session when the cap is reached
     if len(_sessions) >= _MAX_SESSIONS:
         _sessions.popitem(last=False)
 
@@ -102,6 +111,7 @@ def _get_or_create_session(session_id: str) -> dict:
 
 
 async def run_agent(session_id: str, user_message: str) -> dict:
+    # Resolve or create the session, attach a tool capture callback, run the agent
     session = _get_or_create_session(session_id)
     executor: AgentExecutor = session["executor"]
 
