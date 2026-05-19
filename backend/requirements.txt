@@ -1,0 +1,14 @@
+fastapi
+uvicorn[standard]
+langchain==0.3.25
+langchain-openai==0.3.16
+langchain-community==0.3.23
+langchain-core==0.3.58
+tavily-python
+openai
+psycopg2-binary
+pgvector
+beautifulsoup4
+httpx
+python-dotenv
+pydantic
