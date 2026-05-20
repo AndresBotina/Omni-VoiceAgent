@@ -34,8 +34,8 @@ An AI-powered urban assistant that helps travelers and foreigners explore any ci
 
 | Mode | Description |
 |------|-------------|
-| Standard | Text-to-speech using OpenAI TTS (tts-1) |
-| Premium  | High-quality voice synthesis using ElevenLabs multilingual v2 |
+| Standard | OpenAI TTS (tts-1) — fast and reliable |
+| Premium 👑 | ElevenLabs multilingual v2 — high quality natural voice |
 
 ---
 
@@ -74,9 +74,12 @@ TTS_MODEL=tts-1
 TTS_VOICE=alloy
 OPENWEATHER_API_KEY=your_openweathermap_key
 VITE_OPENWEATHER_API_KEY=your_openweathermap_key
+ELEVENLABS_API_KEY=your_elevenlabs_key
+ELEVENLABS_VOICE_ID=your_voice_id
 ```
 
 > **Note:** `OPENWEATHER_API_KEY` and `VITE_OPENWEATHER_API_KEY` must have the same value.  
+> **Note:** `ELEVENLABS_API_KEY` and `ELEVENLABS_VOICE_ID` are required only for Premium voice mode.  
 > **Note:** `DATABASE_URL` does not need to be changed — it works as-is with Docker.
 
 ### Step 4 — Build and start all services
@@ -209,8 +212,8 @@ VoiceAgent/
 | `TTS_VOICE` | No | TTS voice (default: `alloy`) |
 | `OPENWEATHER_API_KEY` | Yes | OpenWeatherMap API key (free at openweathermap.org) |
 | `VITE_OPENWEATHER_API_KEY` | Yes | OpenWeatherMap API key for frontend (same value as OPENWEATHER_API_KEY) |
-| `ELEVENLABS_API_KEY` | Yes for Premium voice | ElevenLabs API key |
-| `ELEVENLABS_VOICE_ID` | Yes for Premium voice | ElevenLabs voice ID |
+| `ELEVENLABS_API_KEY` | For Premium voice | ElevenLabs API key |
+| `ELEVENLABS_VOICE_ID` | For Premium voice | ElevenLabs Voice ID |
 
 ---
 
