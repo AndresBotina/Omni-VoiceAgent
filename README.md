@@ -23,10 +23,19 @@ An AI-powered urban assistant that helps travelers and foreigners explore any ci
 
 | Tool | Trigger | Description |
 |------|---------|-------------|
-| `get_weather` | Questions about climate or temperature | Fetches real-time weather via OpenWeatherMap API |
-| `convert_currency` | Questions about money or exchange rates | Converts between currencies using live exchange rates (no API key required) |
+| `get_weather` | Questions about climate or temperature | Fetches real-time weather via OpenWeatherMap API with practical recommendations. |
+| `convert_currency` | Questions about money, prices or exchange rates | Converts between any currencies using live rates. Defaults to COP if target currency not specified. |
 | `web_search` | Questions about places, transport, food | Searches the web for real-time city information |
 | `search_knowledge_base` | Domain-specific city questions | Searches ingested content from configured RAG source |
+
+---
+
+## Voice Modes
+
+| Mode | Description |
+|------|-------------|
+| Standard | Text-to-speech using OpenAI TTS (tts-1) |
+| Premium  | High-quality voice synthesis using ElevenLabs multilingual v2 |
 
 ---
 
@@ -200,6 +209,8 @@ VoiceAgent/
 | `TTS_VOICE` | No | TTS voice (default: `alloy`) |
 | `OPENWEATHER_API_KEY` | Yes | OpenWeatherMap API key (free at openweathermap.org) |
 | `VITE_OPENWEATHER_API_KEY` | Yes | OpenWeatherMap API key for frontend (same value as OPENWEATHER_API_KEY) |
+| `ELEVENLABS_API_KEY` | Yes for Premium voice | ElevenLabs API key |
+| `ELEVENLABS_VOICE_ID` | Yes for Premium voice | ElevenLabs voice ID |
 
 ---
 
