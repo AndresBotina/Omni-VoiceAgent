@@ -35,7 +35,7 @@ An AI-powered urban assistant that helps travelers and foreigners explore any ci
 | Mode | Description |
 |------|-------------|
 | Standard | OpenAI TTS (tts-1) — fast and reliable |
-| Premium 👑 | ElevenLabs multilingual v2 — high quality natural voice |
+| Premium  | ElevenLabs multilingual v2 — high quality natural voice |
 
 ---
 
