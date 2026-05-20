@@ -29,27 +29,22 @@ const LogoIcon = () => (
   </svg>
 );
 
-const MicIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
-    <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-    <line x1="12" y1="19" x2="12" y2="23"/>
-    <line x1="8" y1="23" x2="16" y2="23"/>
-  </svg>
-);
-
 // Navigation items — id maps to activeSection state
 const NAV_ITEMS = [
   { icon: <ChatIcon />, label: 'Chat', id: 'chat' },
   { icon: <KnowledgeIcon />, label: 'Sources', id: 'knowledge' },
 ];
 
-export default function Sidebar({ isOpen, onToggle, mode, onModeChange, onIngest }) {
+export default function Sidebar({ isOpen, onToggle, onIngest }) {
   // activeSection: which nav item is highlighted and which panel is shown
   // kbUrl / kbStatus: ingest panel URL input and last ingest result message
   const [activeSection, setActiveSection] = useState('chat');
   const [kbUrl, setKbUrl] = useState('');
   const [kbStatus, setKbStatus] = useState(null);
+  const [ingestedSources, setIngestedSources] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('omni_sources') || '[]') }
+    catch { return [] }
+  });
 
   // Calls the parent's onIngest handler and shows success/error status
   const handleIngest = async () => {
@@ -58,9 +53,21 @@ export default function Sidebar({ isOpen, onToggle, mode, onModeChange, onIngest
     try {
       const result = await onIngest(kbUrl.trim());
       setKbStatus(`✓ ${result.chunks_ingested} chunks ingested`);
+      const newSources = [...ingestedSources, kbUrl.trim()];
+      setIngestedSources(newSources);
+      localStorage.setItem('omni_sources', JSON.stringify(newSources));
+      setKbUrl('');
     } catch (e) {
       setKbStatus(`✗ ${e.message}`);
     }
+  };
+
+  const handleRemoveSource = (index) => {
+    const newSources = ingestedSources.filter((_, i) => i !== index);
+    setIngestedSources(newSources);
+    localStorage.setItem('omni_sources', JSON.stringify(newSources));
+    setKbStatus('Removed');
+    setTimeout(() => setKbStatus(null), 1000);
   };
 
   return (
@@ -175,63 +182,45 @@ export default function Sidebar({ isOpen, onToggle, mode, onModeChange, onIngest
           {kbStatus && (
             <p style={{ fontSize: '11px', color: 'var(--success)', margin: '6px 0 0' }}>{kbStatus}</p>
           )}
+          <div style={{ marginTop: '10px' }}>
+            {ingestedSources.length === 0 ? (
+              <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: 0, padding: '0 4px' }}>
+                No sources added yet
+              </p>
+            ) : (
+              ingestedSources.map((url, i) => (
+                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '3px 4px' }}>
+                  <span style={{
+                    fontSize: '11px',
+                    color: 'var(--text-secondary)',
+                    maxWidth: '140px',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}>
+                    {url}
+                  </span>
+                  <button
+                    onClick={() => handleRemoveSource(i)}
+                    style={{
+                      color: 'var(--text-muted)',
+                      background: 'transparent',
+                      border: 'none',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      padding: '0 4px',
+                      flexShrink: 0,
+                    }}
+                  >
+                    ×
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
         </div>
       )}
 
-      {/* Bottom section: voice mode toggle, pinned to the bottom of the sidebar */}
-      <div style={{ marginTop: 'auto', padding: '12px 8px', borderTop: '1px solid var(--border)' }}>
-        {/* Voice toggle: switches TTS mode on/off with a sliding pill */}
-        <div
-          onClick={() => onModeChange(mode === 'text' ? 'voice' : 'text')}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '10px',
-            padding: '8px',
-            cursor: 'pointer',
-            borderRadius: 'var(--radius-sm)',
-            justifyContent: isOpen ? 'space-between' : 'center',
-          }}
-        >
-          {isOpen ? (
-            <>
-              <span style={{
-                fontSize: '14px',
-                color: 'var(--text-secondary)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-              }}>
-                <MicIcon />
-                <span>Voice</span>
-              </span>
-              {/* Toggle pill — slides right when voice mode is active */}
-              <div style={{
-                width: '36px',
-                height: '20px',
-                background: mode === 'voice' ? 'var(--accent)' : 'var(--border)',
-                borderRadius: '10px',
-                transition: 'background 0.2s',
-                position: 'relative',
-                flexShrink: 0,
-              }}>
-                <div style={{
-                  position: 'absolute',
-                  top: '2px',
-                  left: mode === 'voice' ? '18px' : '2px',
-                  width: '16px',
-                  height: '16px',
-                  background: 'white',
-                  borderRadius: '50%',
-                  transition: 'left 0.2s',
-                }} />
-              </div>
-            </>
-          ) : (
-            <MicIcon />
-          )}
-        </div>
-      </div>
     </div>
   );
 }

@@ -21,6 +21,10 @@ export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [ingestUrl, setIngestUrl] = useState('');
   const [ingestStatus, setIngestStatus] = useState(null);
+  const [premiumVoice, setPremiumVoice] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const [scrollTrigger, setScrollTrigger] = useState(0);
 
   const handleSend = async () => {
     const trimmed = input.trim();
@@ -35,7 +39,7 @@ export default function App() {
     setIsLoading(true);
 
     try {
-      const result = await sendMessage({ session_id: SESSION_ID, message: trimmed, mode });
+      const result = await sendMessage({ session_id: SESSION_ID, message: trimmed, mode, voice_mode: premiumVoice ? "premium" : "standard" });
       // Append assistant response including optional tool name and audio
       setMessages((prev) => [
         ...prev,
@@ -44,8 +48,10 @@ export default function App() {
           content: result.response,
           tool_used: result.tool_used,
           audio: result.audio,
+          isPremium: premiumVoice,
         },
       ]);
+      setScrollTrigger((prev) => prev + 1);
     } catch (e) {
       setMessages((prev) => [
         ...prev,
@@ -74,36 +80,101 @@ export default function App() {
   // Reusable input box: textarea + voice toggle + send button
   // Rendered in the centered welcome state AND the bottom bar during chat
   const inputBox = (
-    <div className="input-inner">
+    <div
+      className="input-inner"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      style={{
+        border: isFocused
+          ? '1px solid rgba(255,255,255,0.2)'
+          : isHovered
+          ? '1px solid rgba(255,255,255,0.15)'
+          : '1px solid var(--border)',
+        boxShadow: 'none',
+      }}
+    >
       <textarea
         value={input}
         onChange={(e) => setInput(e.target.value)}
         onKeyDown={handleKeyDown}
+        onFocus={() => setIsFocused(true)}
+        onBlur={() => setIsFocused(false)}
         rows={2}
         placeholder="Ask about any city, transport, weather or places..."
       />
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        {/* Voice toggle: switches mode between text and voice */}
-        <button
-          onClick={() => setMode(mode === 'text' ? 'voice' : 'text')}
-          style={{
-            background: 'none',
-            border: 'none',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            fontSize: '12px',
-            color: mode === 'voice' ? 'var(--accent-light)' : 'var(--text-muted)',
-            cursor: 'pointer',
-            padding: 0,
-          }}
-        >
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
-            <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
-          </svg>
-          Voice response
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          {/* Voice response button: activates standard TTS */}
+          <button
+            onClick={() => {
+              if (mode === 'voice' && !premiumVoice) { setMode('text'); setPremiumVoice(false); }
+              else { setMode('voice'); setPremiumVoice(false); }
+            }}
+            style={{
+              background: mode === 'voice' && !premiumVoice ? 'linear-gradient(135deg, #6366f1, #7C3AED)' : 'transparent',
+              border: mode === 'voice' && !premiumVoice ? '1px solid #6366f1' : '1px solid var(--border)',
+              color: mode === 'voice' && !premiumVoice ? 'white' : 'var(--text-muted)',
+              boxShadow: mode === 'voice' && !premiumVoice ? '0 0 12px rgba(99,102,241,0.4)' : 'none',
+              borderRadius: '999px',
+              padding: '6px 12px',
+              fontSize: '12px',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+            }}
+          >
+            {mode === 'voice' && !premiumVoice ? (
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                <path d="M15.54 8.46a5 5 0 0 1 0 7.07" style={{ animation: 'waveIn 0.6s ease forwards', opacity: 0 }}/>
+                <path d="M19.07 4.93a10 10 0 0 1 0 14.14" style={{ animation: 'waveIn 0.6s ease 0.2s forwards', opacity: 0 }}/>
+              </svg>
+            ) : (
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+              </svg>
+            )}
+            Voice response
+          </button>
+          {/* Premium voice button: activates ElevenLabs TTS */}
+          <button
+            onClick={() => {
+              if (premiumVoice) { setMode('text'); setPremiumVoice(false); }
+              else { setMode('voice'); setPremiumVoice(true); }
+            }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              fontSize: '12px',
+              borderRadius: '999px',
+              padding: '6px 12px',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              background: premiumVoice ? 'linear-gradient(135deg, #f59e0b, #d97706)' : 'transparent',
+              border: premiumVoice ? '1px solid #f59e0b' : '1px solid var(--border)',
+              color: premiumVoice ? 'white' : 'var(--text-muted)',
+              boxShadow: premiumVoice ? '0 0 12px rgba(245,158,11,0.4)' : 'none',
+            }}
+          >
+            <svg
+              key={premiumVoice ? 'active' : 'inactive'}
+              width="12"
+              height="12"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+              style={{
+                animation: premiumVoice ? 'crownPop 0.5s ease forwards' : 'none',
+                display: 'inline-block'
+              }}
+            >
+              <path d="M2 19h20v2H2zM2 6l5 7 5-7 5 7 5-7v11H2z"/>
+            </svg>
+            Voice Premium
+          </button>
+        </div>
         {/* Send button: accent-colored when input has text, transparent when empty */}
         <button
           className="send-btn"
@@ -175,7 +246,12 @@ export default function App() {
             }}>
               <span style={{ fontSize: '15px', fontWeight: 700, color: 'var(--accent-light)' }}>Omni</span>
             </div>
-            <ChatWindow messages={messages} isLoading={isLoading} />
+            <ChatWindow
+                messages={messages}
+                isLoading={isLoading}
+                scrollTrigger={scrollTrigger}
+                onType={() => setScrollTrigger(prev => prev + 1)}
+              />
             <div className="input-area">
               {inputBox}
             </div>

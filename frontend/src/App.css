@@ -56,10 +56,6 @@
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 
-.input-inner:focus-within {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 2px var(--accent-glow);
-}
 
 .input-inner textarea {
   background: transparent;

@@ -1,8 +1,8 @@
-export async function sendMessage({ session_id, message, mode }) {
+export async function sendMessage({ session_id, message, mode, voice_mode = "standard" }) {
   const res = await fetch('/api/chat', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ session_id, message, mode }),
+    body: JSON.stringify({ session_id, message, mode, voice_mode }),
   });
   if (!res.ok) {
     const text = await res.text();

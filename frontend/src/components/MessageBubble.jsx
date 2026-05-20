@@ -1,3 +1,4 @@
+import { useState, useEffect, useRef } from 'react';
 import ToolIndicator from './ToolIndicator';
 import AudioPlayer from './AudioPlayer';
 
@@ -7,12 +8,43 @@ function parseMarkdown(text) {
     .replace(/^## (.*?)$/gm, '<strong style="display:block;margin-top:12px;margin-bottom:4px;font-size:15px;color:#A78BFA">$1</strong>')
     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
     .replace(/\*(.*?)\*/g, '<em>$1</em>')
-    .replace(/^- (.*?)$/gm, '<span style="display:block;padding-left:12px;margin:2px 0">• $1</span>')
+    .replace(/^\d+\. (.*?)$/gm, '<span style="display:block;padding-left:4px;margin:1px 0">$1</span>')
+    .replace(/^- (.*?)$/gm, '<span style="display:block;padding-left:4px;margin:1px 0">• $1</span>')
+    .replace(/\n\n/g, '<br/>')
     .replace(/\n/g, '<br/>');
 }
 
-export default function MessageBubble({ message }) {
+export default function MessageBubble({ message, onType }) {
   const isUser = message.role === 'user';
+  const [displayed, setDisplayed] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
+  const intervalRef = useRef(null);
+
+  useEffect(() => {
+    if (message.role !== 'assistant') return;
+    setDisplayed('');
+    setIsTyping(true);
+    let i = 0;
+    intervalRef.current = setInterval(() => {
+      i += 2;
+      setDisplayed(message.content.slice(0, i));
+      if (i % 20 === 0 && onType) onType();
+      if (i >= message.content.length) {
+        setDisplayed(message.content);
+        clearInterval(intervalRef.current);
+        setIsTyping(false);
+      }
+    }, 10);
+    return () => clearInterval(intervalRef.current);
+  }, [message.content]);
+
+  const handleClick = () => {
+    if (isTyping) {
+      clearInterval(intervalRef.current);
+      setDisplayed(message.content);
+      setIsTyping(false);
+    }
+  };
 
   if (isUser) {
     return (
@@ -68,6 +100,7 @@ export default function MessageBubble({ message }) {
           </svg>
         </div>
         <div
+          onClick={handleClick}
           style={{
             background: 'var(--bg-secondary)',
             color: 'var(--text-primary)',
@@ -75,14 +108,19 @@ export default function MessageBubble({ message }) {
             padding: '12px 16px',
             borderRadius: '4px 18px 18px 18px',
             maxWidth: '78%',
+            minWidth: '200px',
             fontSize: '14px',
             lineHeight: 1.7,
             boxShadow: 'var(--shadow-sm)',
             wordBreak: 'break-word',
+            cursor: isTyping ? 'pointer' : 'default',
           }}
         >
-          <span dangerouslySetInnerHTML={{ __html: parseMarkdown(message.content) }} />
-          {message.audio && <AudioPlayer audioBase64={message.audio} />}
+          {isTyping
+            ? <span style={{ whiteSpace: 'pre-wrap' }}>{displayed}</span>
+            : <span dangerouslySetInnerHTML={{ __html: parseMarkdown(message.role === 'assistant' ? displayed : message.content) }} />
+          }
+          {message.audio && <AudioPlayer audioBase64={message.audio} isPremium={message.isPremium} />}
         </div>
       </div>
     </div>

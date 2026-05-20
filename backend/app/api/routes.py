@@ -2,7 +2,7 @@ import base64
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from ..agent.agent import run_agent
-from ..tts.synthesizer import synthesize_speech
+from ..tts.synthesizer import synthesize_speech, synthesize_speech_elevenlabs
 from ..rag.ingestion import ingest_url
 
 router = APIRouter()
@@ -12,6 +12,7 @@ class ChatRequest(BaseModel):
     session_id: str
     message: str
     mode: str  # "text" or "voice"
+    voice_mode: str = "standard"  # "standard" or "premium"
 
 
 class ChatResponse(BaseModel):
@@ -38,7 +39,10 @@ async def chat(request: ChatRequest):
 
         # In voice mode, convert the text response to MP3 and base64-encode it
         if request.mode == "voice":
-            audio_bytes = await synthesize_speech(result["response"])
+            if request.voice_mode == "premium":
+                audio_bytes = await synthesize_speech_elevenlabs(result["response"])
+            else:
+                audio_bytes = await synthesize_speech(result["response"])
             audio_b64 = base64.b64encode(audio_bytes).decode("utf-8")
         else:
             audio_b64 = None

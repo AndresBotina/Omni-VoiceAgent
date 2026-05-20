@@ -1,18 +1,20 @@
 import { useEffect, useRef } from 'react';
 import MessageBubble from './MessageBubble';
 
-export default function ChatWindow({ messages, isLoading }) {
-  const bottomRef = useRef(null);
+export default function ChatWindow({ messages, isLoading, scrollTrigger, onType }) {
+  const containerRef = useRef(null);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, isLoading]);
+    if (containerRef.current) {
+      containerRef.current.scrollTop = containerRef.current.scrollHeight;
+    }
+  }, [messages, isLoading, scrollTrigger]);
 
   return (
-    <div style={{ flex: 1, overflowY: 'auto', padding: '16px 0', background: 'var(--bg-primary)' }}>
+    <div ref={containerRef} style={{ flex: 1, overflowY: 'auto', padding: '16px 0', background: 'var(--bg-primary)' }}>
       <div style={{ maxWidth: '900px', margin: '0 auto', width: '100%', padding: '0 24px' }}>
         {messages.map((msg, i) => (
-          <MessageBubble key={i} message={msg} />
+          <MessageBubble key={i} message={msg} onType={onType} />
         ))}
 
         {isLoading && (
@@ -47,7 +49,6 @@ export default function ChatWindow({ messages, isLoading }) {
           </div>
         )}
 
-        <div ref={bottomRef} />
       </div>
     </div>
   );
